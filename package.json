@@ -1,0 +1,26 @@
+{
+    "name": "bandersnatch",
+    "version": "1.0.0",
+    "description": "- Acesse o [index](./public/index/index.html) para visualizar a lista de titulos\r - Acesse o [bandersnatch](./public/bandersnatch/index.html) para acessar o titulo base do projeto",
+    "main": "index.js",
+    "scripts": {
+        "assets": "npx http-server --cors -p 8081 assets/",
+        "dev": "concurrently --kill-others \"npx http-server --cors -p 8080 public/\" \"npx http-server --cors -p 8081 assets/\""
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/thinog/bandersnatch.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/thinog/bandersnatch/issues"
+    },
+    "homepage": "https://github.com/thinog/bandersnatch#readme",
+    "dependencies": {},
+    "devDependencies": {
+        "concurrently": "^5.3.0",
+        "http-server": "^0.12.3"
+    }
+}
