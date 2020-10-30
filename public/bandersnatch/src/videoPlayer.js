@@ -1,11 +1,14 @@
 class VideoMediaPlayer {
-    constructor({ manifestJSON, network }) {
+    constructor({ manifestJSON, network, videoComponent }) {
         this.manifestJSON = manifestJSON;
         this.network = network;
+        this.videoComponent = videoComponent;
         this.videoElement = null;
         this.sourceBuffer = null;
         this.selected = {};
         this.videoDuration = 0;
+        this.activeItem = {};
+        this.selections = [];
     }
 
     initializeCodec() {
@@ -37,13 +40,62 @@ class VideoMediaPlayer {
 
             mediaSource.duration = this.videoDuration;
             await this.fileDownload(selected.url);
+            setInterval(this.waitForQuestions.bind(this), 300);
         };
     }
 
+    waitForQuestions() {
+        const currentTime = parseInt(this.videoElement.currentTime);
+
+        if(this.selected.at !== currentTime) return;
+        if(this.activeItem.url === this.selected.url) return;
+
+        this.videoComponent.configureModal(this.selected.options);
+        this.activeItem = this.selected;
+    }
+
+    currentFileResolution() {
+        const prepareUrl = {
+            url: this.manifestJSON.finalizar.url,
+            fileResolution: this.manifestJSON.lowestResolution,
+            fileResolutionTag: this.manifestJSON.fileResolutionTag, 
+            hostTag: this.manifestJSON.hostTag
+        }
+
+        const finalURL = this.network.parseManifestURL(prepareUrl);
+
+        return this.network.getProperResolution(finalURL);
+    }
+
+    async nextChunk(data) {
+        const key = data.toLowerCase();
+        const selected = this.manifestJSON[key];
+        this.selected = {
+            ...selected,
+            at: parseInt(this.videoElement.currentTime + selected.at)
+        }
+
+        this.manageLag(data);
+
+        this.videoElement.play();
+        await this.fileDownload(selected.url);
+    }
+
+    manageLag(selected) {
+        if(!!~this.selections.indexOf(selected.url)) {
+            selected.at += 5;
+            return;
+        }
+
+        this.selections.push(selected.url);
+    }
+
     async fileDownload(url) {
+        const fileResolution = await this.currentFileResolution();
+
         const prepareUrl = { 
             url, 
-            fileResolution: 360, 
+            fileResolution: fileResolution, 
             fileResolutionTag: this.manifestJSON.fileResolutionTag, 
             hostTag: this.manifestJSON.hostTag
         };
@@ -57,7 +109,7 @@ class VideoMediaPlayer {
     setVideoPlayerDuration(finalURL) {
         const bars = finalURL.split('/');
         const [ name, videoDuration ] = bars[bars.length -1].split('-');
-        this.videoDuration += videoDuration;
+        this.videoDuration += parseFloat(videoDuration);
     }
 
     async processBufferSegments(allSegments) {
